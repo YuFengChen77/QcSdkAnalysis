@@ -49,7 +49,7 @@ import QcSdkAnalysis
 precondition(NSClassFromString("QcSdkAnalysis.QcAnalysisManager") != nil)
 ```
 
-`-ObjC` 缺失可能使只通过类名访问的实现被裁掉。不要直接创建内部 Provider 代替 SDK 的公开业务入口；通过编译和反射检查后，仍需配置渠道并联调对应功能。
+`-ObjC` 缺失可能使只通过类名访问的实现被裁掉。业务通过 SDK 公开入口调用，不直接依赖内部实现类；通过编译和反射检查后，仍需完成本模块配置及业务联调。
 
 ## 分析配置与接入
 
@@ -64,6 +64,18 @@ precondition(NSClassFromString("QcSdkAnalysis.QcAnalysisManager") != nil)
 | `td_analytics_app_id` | ThinkingData 项目 App ID |
 | `td_analytics_auto_collect_event` | 现有实现支持的自动采集事件配置，按项目约定填写 |
 | `td_analytics_debug_mode` | 可选调试模式；正式发布前确认未使用测试专用模式 |
+
+自动采集配置使用以下编号，以 `_` 分隔，例如 `1_2_3`：
+
+| 编号 | 事件 |
+|---|---|
+| `1` | App Install |
+| `2` | App Start |
+| `3` | App End |
+| `4` | View Screen |
+| `5` | App Click |
+
+未配置有效编号时不会由该配置开启自动采集。调试模式当前识别 `DEBUG` 和 `DEBUG_ONLY`，其他值沿用普通模式；正式环境不要保留测试专用配置。事件是否采集仍需遵循宿主的实际初始化和隐私流程。
 
 沿用 Core 的启动、初始化、用户和游戏事件上报流程，不新增另一条业务会话链路。如需使用 `QcAnalysisManager` 暴露的 Adjust delegate、ThinkingData handler / properties，应在分析初始化前配置，并遵循公开 API 的线程约束。
 
@@ -105,7 +117,7 @@ Xcode 左侧未显示 XCFramework 不代表下载失败，文件通常位于工�
 ## 注意事项
 
 - 自有 SDK 为静态链接，不重复同时集成手动 Framework 和 SPM 产品，不手工将自有静态 Framework 设置为 Embed & Sign。第三方若含动态依赖，由最终 App 正常嵌入和签名。
-- 包解析与反射检查不等于真实账号授权、分享、上报或 Unity 业务已验证；按本模块配置执行真机 / 宿主联调。
+- 包解析与反射检查不代表业务验收完成；仍需验证归因、用户关联、事件上报及隐私配置。
 - SDK 的资源和公开 `.swiftinterface` / Objective-C 头文件可以查看，但不包含业务实现源码。
 - 不将 Client Secret、服务端密钥、授权 token 或内部日志提交到公开仓库。
 - Core 通用集成和业务配置另见 [QcSdkCore README](https://github.com/YuFengChen77/QcSdkCore#readme)。
